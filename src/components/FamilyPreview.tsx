@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import type { Design, ComboType, AdultSizeStock, KidsSizeStock } from '../types';
-import { Users, User, Smile, Baby, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { Users, User, Smile, Baby, CheckCircle, XCircle, ArrowLeft, Info, Ruler, X } from 'lucide-react';
 
 interface FamilyPreviewProps {
     design: Design | null;
-    onPlaceOrder: (designId: string, comboType: ComboType, selectedSizes: Record<string, string>) => Promise<void>;
+    onPlaceOrder: (designId: string, comboType: ComboType, selectedSizes: Record<string, string>, notes: Record<string, string>) => Promise<void>;
     onBack: () => void;
 }
 
@@ -18,6 +18,31 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
         'Son': '4-5',
         'Daughter': '4-5'
     });
+    const [notes, setNotes] = useState<Record<string, string>>({});
+    const [showSizeGuide, setShowSizeGuide] = useState(false);
+
+    const sizeChart = {
+        adult: [
+            { size: 'M', chest: '38"', length: '28"' },
+            { size: 'L', chest: '40"', length: '29"' },
+            { size: 'XL', chest: '42"', length: '30"' },
+            { size: 'XXL', chest: '44"', length: '31"' },
+            { size: '3XL', chest: '46"', length: '32"' },
+        ],
+        kids: [
+            { size: '0-1', height: '70-80cm', chest: '20"' },
+            { size: '1-2', height: '80-90cm', chest: '21"' },
+            { size: '2-3', height: '90-100cm', chest: '22"' },
+            { size: '3-4', height: '100-110cm', chest: '23"' },
+            { size: '4-5', height: '110-120cm', chest: '24"' },
+            { size: '5-6', height: '120-130cm', chest: '25"' },
+            { size: '6-7', height: '130-140cm', chest: '26"' },
+            { size: '7-8', height: '140-150cm', chest: '27"' },
+            { size: '9-10', height: '150-160cm', chest: '28"' },
+            { size: '11-12', height: '160-170cm', chest: '29"' },
+            { size: '13-14', height: '170-180cm', chest: '30"' },
+        ]
+    };
 
     if (orderSuccess) {
         return (
@@ -72,18 +97,25 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
         return stock > 0;
     };
 
-    const handleSizeChange = (member: string, size: string) => {
-        setSelectedSizes(prev => ({ ...prev, [member]: size }));
+    const handlePlaceOrder = async () => {
+        setIsSubmitting(true);
+        await onPlaceOrder(design.id, selectedCombo, selectedSizes, notes);
+        setIsSubmitting(false);
+        setOrderSuccess(true);
     };
 
     const isAllInStock = comboMembers[selectedCombo].every(m => checkStock(m, selectedSizes[m]));
 
     return (
         <div style={{ padding: '0 max(16px, 2vw) 48px max(16px, 2vw)', maxWidth: '1200px', margin: '0 auto', width: '100%', overflowX: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <button onClick={onBack} className="btn btn-ghost" style={{ gap: '8px' }}>
                     <ArrowLeft size={18} />
-                    Back to Gallery
+                    Change Design
+                </button>
+                <button onClick={() => setShowSizeGuide(true)} className="btn btn-ghost" style={{ gap: '8px', color: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                    <Ruler size={18} />
+                    Size Guide
                 </button>
             </div>
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -182,35 +214,41 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
                                 </div>
 
                                 <div style={{ textAlign: 'center', width: '100%' }}>
-                                    <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '8px' }}>{member}</div>
+                                    {/* Member Info & Sizes */}
+                                    <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{member}</h3>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                {sizes.map(size => (
+                                                    <button
+                                                        key={size}
+                                                        onClick={() => setSelectedSizes(prev => ({ ...prev, [member]: size }))}
+                                                        className={`btn ${selectedSizes[member] === size ? 'btn-primary' : 'btn-ghost'}`}
+                                                        style={{ padding: '4px 12px', fontSize: '0.8rem', minWidth: '45px' }}
+                                                    >
+                                                        {size}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
 
-                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                                        Select {isKid ? 'Age' : 'Size'}
-                                    </label>
+                                        {/* Measurement Note Input */}
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="text"
+                                                className="input"
+                                                placeholder={`Optional: Height, Weight or custom notes for ${member}...`}
+                                                style={{ fontSize: '0.85rem', padding: '10px 12px', background: 'rgba(0,0,0,0.2)' }}
+                                                value={notes[member] || ''}
+                                                onChange={(e) => setNotes(prev => ({ ...prev, [member]: e.target.value }))}
+                                            />
+                                        </div>
 
-                                    <select
-                                        className="input"
-                                        style={{ padding: '8px', fontSize: '0.85rem', textAlignLast: 'center' }}
-                                        value={selectedSizes[member]}
-                                        onChange={(e) => handleSizeChange(member, e.target.value)}
-                                    >
-                                        {sizes.map(s => (
-                                            <option key={s} value={s}>{s} {isKid ? 'Years' : ''}</option>
-                                        ))}
-                                    </select>
-
-                                    <div style={{
-                                        marginTop: '10px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        color: isInStock ? 'var(--success)' : 'var(--danger)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '4px'
-                                    }}>
-                                        {isInStock ? <CheckCircle size={14} /> : <XCircle size={14} />}
-                                        {isInStock ? 'Size Available' : 'Sold Out'}
+                                        {!isInStock && (
+                                            <div style={{ color: 'var(--danger)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <Info size={14} /> Out of stock in size {selectedSizes[member]}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -240,12 +278,7 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
                     {isAllInStock && (
                         <button
                             disabled={isSubmitting}
-                            onClick={async () => {
-                                setIsSubmitting(true);
-                                await onPlaceOrder(design.id, selectedCombo, selectedSizes);
-                                setIsSubmitting(false);
-                                setOrderSuccess(true);
-                            }}
+                            onClick={handlePlaceOrder}
                             className="btn btn-primary"
                             style={{ marginTop: '16px', width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '12px' }}
                         >
@@ -254,6 +287,88 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
                     )}
                 </div>
             </div>
+
+            {/* Size Guide Modal */}
+            {showSizeGuide && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(15, 23, 42, 0.9)',
+                    backdropFilter: 'blur(8px)',
+                    zIndex: 2000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '24px'
+                }}>
+                    <div className="glass-card" style={{ maxWidth: '600px', width: '100%', padding: '32px', position: 'relative' }}>
+                        <button
+                            onClick={() => setShowSizeGuide(false)}
+                            style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                        >
+                            <X size={24} />
+                        </button>
+                        <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Ruler color="var(--primary)" />
+                            Detailed Size Guide
+                        </h2>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '24px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1rem', color: 'var(--primary)', marginBottom: '12px' }}>Adults (Men/Women)</h3>
+                                <table style={{ width: '100%', textAlign: 'left', fontSize: '0.9rem' }}>
+                                    <thead>
+                                        <tr style={{ color: 'var(--text-muted)' }}>
+                                            <th style={{ padding: '8px' }}>Size</th>
+                                            <th style={{ padding: '8px' }}>Chest</th>
+                                            <th style={{ padding: '8px' }}>Length</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {sizeChart.adult.map(s => (
+                                            <tr key={s.size} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                                <td style={{ padding: '8px', fontWeight: 700 }}>{s.size}</td>
+                                                <td style={{ padding: '8px' }}>{s.chest}</td>
+                                                <td style={{ padding: '8px' }}>{s.length}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div>
+                                <h3 style={{ fontSize: '1rem', color: 'var(--primary)', marginBottom: '12px' }}>Kids (Boys/Girls)</h3>
+                                <table style={{ width: '100%', textAlign: 'left', fontSize: '0.9rem' }}>
+                                    <thead>
+                                        <tr style={{ color: 'var(--text-muted)' }}>
+                                            <th style={{ padding: '8px' }}>Age/Size</th>
+                                            <th style={{ padding: '8px' }}>Height</th>
+                                            <th style={{ padding: '8px' }}>Chest</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {sizeChart.kids.map(s => (
+                                            <tr key={s.size} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                                <td style={{ padding: '8px', fontWeight: 700 }}>{s.size}</td>
+                                                <td style={{ padding: '8px' }}>{s.height}</td>
+                                                <td style={{ padding: '8px' }}>{s.chest}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setShowSizeGuide(false)}
+                            className="btn btn-primary"
+                            style={{ width: '100%', marginTop: '32px' }}
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

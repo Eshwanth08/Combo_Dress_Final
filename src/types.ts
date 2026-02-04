@@ -49,6 +49,7 @@ export interface Order {
   designName?: string; // For display
   comboType: ComboType;
   selectedSizes: Record<string, string>;
+  notes?: Record<string, string>; // Per-member notes (ht, wt, etc)
   status: OrderStatus;
   createdAt: number;
 }

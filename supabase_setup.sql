@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS orders (
     designid TEXT REFERENCES designs(id) ON DELETE CASCADE,
     combotype TEXT NOT NULL,
     selectedsizes JSONB NOT NULL,
+    notes JSONB,
     status TEXT NOT NULL DEFAULT 'pending',
     createdat BIGINT NOT NULL
 );
@@ -35,12 +36,30 @@ ALTER TABLE designs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 
 -- Designs Policies
-CREATE POLICY "Public Read Access" ON designs FOR SELECT USING (true);
-CREATE POLICY "Public Insert Access" ON designs FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Access" ON designs FOR UPDATE USING (true);
-CREATE POLICY "Public Delete Access" ON designs FOR DELETE USING (true);
+DO $$ 
+BEGIN
+    DROP POLICY IF EXISTS "Public Read Access" ON designs;
+    CREATE POLICY "Public Read Access" ON designs FOR SELECT USING (true);
+    
+    DROP POLICY IF EXISTS "Public Insert Access" ON designs;
+    CREATE POLICY "Public Insert Access" ON designs FOR INSERT WITH CHECK (true);
+    
+    DROP POLICY IF EXISTS "Public Update Access" ON designs;
+    CREATE POLICY "Public Update Access" ON designs FOR UPDATE USING (true);
+    
+    DROP POLICY IF EXISTS "Public Delete Access" ON designs;
+    CREATE POLICY "Public Delete Access" ON designs FOR DELETE USING (true);
+END $$;
 
 -- Orders Policies
-CREATE POLICY "Public Read Access" ON orders FOR SELECT USING (true);
-CREATE POLICY "Public Insert Access" ON orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Access" ON orders FOR UPDATE USING (true);
+DO $$ 
+BEGIN
+    DROP POLICY IF EXISTS "Public Read Access" ON orders;
+    CREATE POLICY "Public Read Access" ON orders FOR SELECT USING (true);
+    
+    DROP POLICY IF EXISTS "Public Insert Access" ON orders;
+    CREATE POLICY "Public Insert Access" ON orders FOR INSERT WITH CHECK (true);
+    
+    DROP POLICY IF EXISTS "Public Update Access" ON orders;
+    CREATE POLICY "Public Update Access" ON orders FOR UPDATE USING (true);
+END $$;

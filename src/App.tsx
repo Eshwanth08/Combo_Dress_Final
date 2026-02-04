@@ -163,6 +163,7 @@ function App() {
                                 updateInventory={updateInventory}
                                 deleteDesign={deleteDesign}
                                 viewMode={activeTab === 'orders' ? 'orders' : 'inventory'}
+                                setViewMode={(mode) => setActiveTab(mode === 'orders' ? 'orders' : 'dashboard')}
                                 onBack={() => {
                                     if (activeTab === 'orders') {
                                         setActiveTab('dashboard');

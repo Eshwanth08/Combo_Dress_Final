@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Design, Order, AdultSizeStock, KidsSizeStock } from '../types';
-import { Search, Edit2, Trash2, Plus, ArrowLeftRight, Clock, CheckCircle2, XCircle, ShoppingBag, Download, FileSpreadsheet, Images, Loader2, ArrowLeft, PlusCircle } from 'lucide-react';
-import { exportToCSV, exportImagesToZip, pushLocalToCloud, downloadSingleImage } from '../data';
+import { Search, Edit2, Trash2, Plus, ArrowLeftRight, Clock, CheckCircle2, XCircle, ShoppingBag, Download, FileSpreadsheet, Images, Loader2, ArrowLeft } from 'lucide-react';
+import { exportToCSV, exportImagesToZip, downloadSingleImage } from '../data';
 
 interface StaffDashboardProps {
     designs: Design[];
@@ -14,25 +14,64 @@ interface StaffDashboardProps {
     onRejectOrder: (orderId: string) => Promise<void>;
     onBack: () => void;
     viewMode: 'inventory' | 'orders';
+    setViewMode: (mode: 'inventory' | 'orders') => void;
 }
 
 const StaffDashboard: React.FC<StaffDashboardProps> = ({
-    designs, orders, updateInventory, deleteDesign, onEdit, onAddNew, onAcceptOrder, onRejectOrder, onBack, viewMode
+    designs, orders, updateInventory, deleteDesign, onEdit, onAddNew, onAcceptOrder, onRejectOrder, onBack, viewMode, setViewMode
 }) => {
     const [search, setSearch] = useState('');
+    const [analyticsFilter, setAnalyticsFilter] = useState<'all' | 'low-stock'>('all');
     const [isExportingImages, setIsExportingImages] = useState(false);
     const [exportProgress, setExportProgress] = useState(0);
-    const [isMigrating, setIsMigrating] = useState(false);
 
-    const filteredDesigns = designs.filter(d =>
-        d.name.toLowerCase().includes(search.toLowerCase()) ||
-        d.fabric.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredDesigns = designs.filter(design => {
+        const matchesSearch =
+            design.name.toLowerCase().includes(search.toLowerCase()) ||
+            design.color.toLowerCase().includes(search.toLowerCase()) ||
+            design.fabric.toLowerCase().includes(search.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        if (analyticsFilter === 'low-stock') {
+            const categories = ['men', 'women', 'boys', 'girls'] as const;
+            return categories.some(cat =>
+                Object.values(design.inventory[cat]).some(stock => {
+                    const s = Number(stock);
+                    return s > 0 && s < 2;
+                })
+            );
+        }
+
+        return true;
+    });
 
     const pendingOrders = orders.filter(o => o.status === 'pending');
 
     const adultSizes: (keyof AdultSizeStock)[] = ['M', 'L', 'XL', 'XXL', '3XL'];
     const kidsSizes: (keyof KidsSizeStock)[] = ['0-1', '1-2', '2-3', '3-4', '4-5', '5-6', '6-7', '7-8', '9-10', '11-12', '13-14'];
+
+    const analytics = useMemo(() => {
+        let totalStock = 0;
+        let lowStockCount = 0;
+
+        designs.forEach(d => {
+            (['men', 'women', 'boys', 'girls'] as const).forEach(cat => {
+                Object.values(d.inventory[cat]).forEach(stock => {
+                    const s = Number(stock);
+                    totalStock += s;
+                    if (s > 0 && s < 2) lowStockCount++;
+                });
+            });
+        });
+
+        return {
+            totalDesigns: designs.length,
+            totalStock,
+            lowStockCount,
+            pendingOrders: pendingOrders.length
+        };
+    }, [designs, pendingOrders]);
 
     const InlineInput = ({ value, onUpdate }: { value: number, onUpdate: (newVal: number) => void }) => (
         <input
@@ -95,18 +134,6 @@ Status: ${order.status.toUpperCase()}
     };
 
 
-    const handleCloudMigration = async () => {
-        if (!window.confirm('This will copy all your local designs to the cloud database. Continue?')) return;
-        setIsMigrating(true);
-        const success = await pushLocalToCloud();
-        setIsMigrating(false);
-        if (success) {
-            alert('Local data successfully migrated to the cloud!');
-            window.location.reload();
-        } else {
-            alert('Migration failed. Ensure Supabase is correctly configured in your .env file.');
-        }
-    };
 
     return (
         <div style={{ padding: 'max(16px, 2vw)', width: '100%', overflowX: 'hidden' }}>
@@ -184,6 +211,67 @@ Status: ${order.status.toUpperCase()}
                     </button>
                 </div>
             </div>
+
+            {/* Analytics Dashboard */}
+            {viewMode === 'inventory' && (
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gap: '16px',
+                    marginBottom: '24px'
+                }}>
+                    {[
+                        { id: 'all', label: 'Total Designs', value: analytics.totalDesigns, icon: FileSpreadsheet, color: '#6366f1' },
+                        { id: 'all', label: 'Total Units', value: analytics.totalStock, icon: ShoppingBag, color: '#10b981' },
+                        { id: 'low-stock', label: 'Low Stock', value: analytics.lowStockCount, icon: XCircle, color: '#ef4444' },
+                        { id: 'orders', label: 'Orders', value: analytics.pendingOrders, icon: Clock, color: '#f59e0b' },
+                    ].map((stat, i) => (
+                        <div
+                            key={i}
+                            className="glass-card"
+                            style={{
+                                padding: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                cursor: 'pointer',
+                                border: (stat.id === analyticsFilter && stat.id !== 'all') ? `2px solid ${stat.color}` : '1px solid var(--glass-border)',
+                                transform: (stat.id === analyticsFilter && stat.id !== 'all') ? 'scale(1.02)' : 'none',
+                                transition: 'all 0.2s ease',
+                                background: (stat.id === analyticsFilter && stat.id !== 'all') ? `${stat.color}05` : 'rgba(255,255,255,0.03)'
+                            }}
+                            onClick={() => {
+                                if (stat.id === 'orders') {
+                                    setViewMode('orders');
+                                } else {
+                                    setAnalyticsFilter(stat.id as any);
+                                    if (stat.id === 'all') setSearch('');
+                                }
+                            }}
+                        >
+                            <div style={{ background: `${stat.color}20`, color: stat.color, padding: '8px', borderRadius: '10px' }}>
+                                <stat.icon size={20} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{stat.label}</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{stat.value}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {analyticsFilter === 'low-stock' && (
+                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)' }}>
+                        <XCircle size={18} />
+                        <span style={{ fontWeight: 600 }}>Filtering: Low Stock Items Only</span>
+                    </div>
+                    <button onClick={() => setAnalyticsFilter('all')} className="btn btn-ghost" style={{ fontSize: '0.8rem' }}>
+                        Clear Filter
+                    </button>
+                </div>
+            )}
 
             {viewMode === 'inventory' ? (
                 <>
@@ -349,12 +437,19 @@ Status: ${order.status.toUpperCase()}
                                         <h3 style={{ margin: 0 }}>
                                             {designs.find(d => d.id === order.designId)?.name || 'Unknown Design'}
                                         </h3>
-                                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
                                             <span className="badge badge-info">{order.comboType}</span>
                                             {Object.entries(order.selectedSizes).map(([member, size]) => (
-                                                <span key={member} style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                    {member}: <strong>{size}</strong>
-                                                </span>
+                                                <div key={member} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                        {member}: <strong>{size}</strong>
+                                                    </span>
+                                                    {order.notes?.[member] && (
+                                                        <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontStyle: 'italic', maxWidth: '150px' }}>
+                                                            "{order.notes[member]}"
+                                                        </span>
+                                                    )}
+                                                </div>
                                             ))}
                                         </div>
                                     </div>
@@ -385,25 +480,6 @@ Status: ${order.status.toUpperCase()}
                             </div>
                         ))
                     )}
-                </div>
-            )}
-            {viewMode === 'inventory' && (
-                <div style={{ marginTop: '40px', padding: 'max(16px, 4vw)', borderRadius: '24px', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.1)', textAlign: 'center' }}>
-                    <h3 style={{ margin: '0 0 12px 0' }}>Cloud Migration Utility</h3>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '24px', maxWidth: '600px', margin: '0 auto 24px auto' }}>
-                        If you have recently configured Supabase environment variables, use this tool to upload your existing local designs to the live database.
-                    </p>
-                    <button
-                        onClick={handleCloudMigration}
-                        disabled={isMigrating}
-                        className="btn btn-primary" style={{ gap: '8px' }}
-                    >
-                        {isMigrating ? <Loader2 size={18} className="spin" /> : <PlusCircle size={18} />}
-                        Sync Local Data to Cloud
-                    </button>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '16px' }}>
-                        Note: This will not overwrite existing cloud data, but will add any missing local designs.
-                    </p>
                 </div>
             )}
             {/* Mobile FAB */}

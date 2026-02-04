@@ -153,6 +153,7 @@ export const submitOrder = async (orderData: Partial<Order>) => {
             designName: design?.name || 'Unknown Design',
             comboType: orderData.comboType!,
             selectedSizes: orderData.selectedSizes!,
+            notes: orderData.notes,
             status: 'pending',
             createdAt: Date.now()
         };
@@ -168,6 +169,7 @@ export const submitOrder = async (orderData: Partial<Order>) => {
             designid: orderData.designId,
             combotype: orderData.comboType,
             selectedsizes: orderData.selectedSizes,
+            notes: orderData.notes,
             status: 'pending',
             createdat: Date.now()
         });
@@ -289,35 +291,3 @@ export const downloadSingleImage = async (url: string, name: string) => {
     }
 };
 
-export const pushLocalToCloud = async (): Promise<boolean> => {
-    if (!isSupabaseConfigured) return false;
-
-    let localDesigns = JSON.parse(localStorage.getItem(DESIGNS_KEY) || '[]');
-    if (localDesigns.length === 0) {
-        localDesigns = initialDesigns;
-    }
-    if (localDesigns.length === 0) return true;
-
-    // Map local designs (CamelCase keys) to DB columns (lowercase)
-    const payload = localDesigns.map((d: any) => ({
-        id: d.id,
-        name: d.name,
-        color: d.color,
-        fabric: d.fabric,
-        imageurl: d.imageUrl,
-        inventory: d.inventory,
-        childtype: d.childType,
-        label: d.label,
-        createdat: d.createdAt
-    }));
-
-    const { error } = await supabase
-        .from('designs')
-        .upsert(payload);
-
-    if (error) {
-        console.error('Migration error:', error);
-        return false;
-    }
-    return true;
-};
