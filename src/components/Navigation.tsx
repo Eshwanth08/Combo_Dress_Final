@@ -39,7 +39,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, role, 
                     <div style={{ background: 'var(--primary)', padding: '8px', borderRadius: '10px', display: 'flex' }}>
                         <ShoppingBag size={24} color="white" />
                     </div>
-                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>TailorPro Store</h2>
+                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>Combo Dress</h2>
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -87,7 +87,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, role, 
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ShoppingBag size={20} color="var(--primary)" />
-                    <span style={{ fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.03em' }}>TAILORPRO</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.03em' }}>COMBO DRESS</span>
                 </div>
                 <button
                     onClick={() => {
