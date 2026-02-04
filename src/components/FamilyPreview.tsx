@@ -121,21 +121,42 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                 <h1 style={{ marginBottom: '8px' }}>Personalized Family Preview</h1>
                 <p style={{ color: 'var(--text-muted)' }}>Matching Set: <strong>{design.name}</strong> • {design.fabric}</p>
+                <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <span>Scroll cards to view all family members</span>
+                    <div style={{ width: '20px', height: '2px', background: 'var(--primary)', opacity: 0.3 }} />
+                </div>
             </div>
 
-            <div className="glass-card" style={{ padding: 'max(16px, 4vw)', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div className="glass-card" style={{ padding: 'max(16px, 4vw)', display: 'flex', flexDirection: 'column', gap: '32px', overflow: 'visible' }}>
                 {/* Combo Selector */}
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                <div style={{
+                    display: 'flex',
+                    gap: '12px',
+                    overflowX: 'auto',
+                    padding: '8px 4px',
+                    marginBottom: '8px',
+                    WebkitOverflowScrolling: 'touch',
+                    justifyContent: 'flex-start',
+                    width: '100%'
+                }}>
                     {(['F-M-S-D', 'F-S', 'M-D', 'F-M'] as ComboType[]).map(combo => (
                         <button
                             key={combo}
                             onClick={() => setSelectedCombo(combo)}
                             className={`btn ${selectedCombo === combo ? 'btn-primary' : 'btn-ghost'}`}
-                            style={{ padding: '12px 24px', borderRadius: '50px' }}
+                            style={{
+                                padding: '10px 20px',
+                                borderRadius: '50px',
+                                flexShrink: 0,
+                                fontSize: '0.9rem'
+                            }}
                         >
                             {combo}
                         </button>
                     ))}
+                </div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '16px', opacity: 0.6 }}>
+                    ← Swipe to see other combos →
                 </div>
 
                 {/* Preview Grid with horizontal scroll on mobile */}
@@ -143,14 +164,15 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
                     className="snap-scroll-container"
                     style={{
                         display: 'flex',
-                        gap: '24px',
+                        gap: '16px',
                         overflowX: 'auto',
-                        padding: 'max(20px, 4vw)',
+                        overflowY: 'visible',
+                        padding: '24px 20px 60px 20px',
                         background: 'rgba(0,0,0,0.2)',
                         borderRadius: '24px',
                         scrollSnapType: 'x mandatory',
                         WebkitOverflowScrolling: 'touch',
-                        scrollbarWidth: 'none'
+                        margin: '0 -20px'
                     }}
                 >
                     {comboMembers[selectedCombo].map((member) => {
@@ -166,14 +188,19 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     gap: '20px',
-                                    minWidth: '200px',
+                                    minWidth: '220px',
                                     scrollSnapAlign: 'center',
-                                    flexShrink: 0
+                                    flexShrink: 0,
+                                    background: 'rgba(255,255,255,0.03)',
+                                    padding: '20px',
+                                    borderRadius: '24px',
+                                    border: '1px solid var(--glass-border)',
+                                    marginBottom: '10px'
                                 }}
                             >
                                 <div style={{
-                                    width: isKid ? '120px' : '160px',
-                                    height: isKid ? '180px' : '260px',
+                                    width: isKid ? '110px' : '140px',
+                                    height: isKid ? '160px' : '220px',
                                     background: 'var(--glass)',
                                     border: `2px solid ${isInStock ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
                                     borderRadius: '30px 30px 10px 10px',
@@ -216,19 +243,30 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
                                 <div style={{ textAlign: 'center', width: '100%' }}>
                                     {/* Member Info & Sizes */}
                                     <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
                                             <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{member}</h3>
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                {sizes.map(size => (
-                                                    <button
-                                                        key={size}
-                                                        onClick={() => setSelectedSizes(prev => ({ ...prev, [member]: size }))}
-                                                        className={`btn ${selectedSizes[member] === size ? 'btn-primary' : 'btn-ghost'}`}
-                                                        style={{ padding: '4px 12px', fontSize: '0.8rem', minWidth: '45px' }}
-                                                    >
-                                                        {size}
-                                                    </button>
-                                                ))}
+                                            <div style={{ width: '100%', maxWidth: '200px' }}>
+                                                <select
+                                                    value={selectedSizes[member]}
+                                                    onChange={(e) => setSelectedSizes(prev => ({ ...prev, [member]: e.target.value }))}
+                                                    className="input"
+                                                    style={{
+                                                        padding: '8px 12px',
+                                                        fontSize: '0.9rem',
+                                                        textAlign: 'center',
+                                                        borderRadius: '12px',
+                                                        background: 'rgba(255,255,255,0.05)',
+                                                        border: '1px solid var(--glass-border)',
+                                                        color: 'white',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {sizes.map(size => (
+                                                        <option key={size} value={size} style={{ background: '#1e293b' }}>
+                                                            {isKid ? `Age ${size}` : `Size ${size}`}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
                                         </div>
 
@@ -265,10 +303,11 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
                     border: `1px solid ${isAllInStock ? 'var(--success)' : 'var(--danger)'}`,
                     position: 'sticky',
                     bottom: 'calc(80px + var(--safe-bottom))',
-                    backgroundColor: isAllInStock ? 'rgba(15, 23, 42, 0.95)' : 'rgba(239, 68, 68, 0.95)',
+                    backgroundColor: isAllInStock ? 'rgba(15, 23, 42, 0.98)' : 'rgba(239, 68, 68, 0.95)',
                     backdropFilter: 'blur(20px)',
                     zIndex: 100,
-                    margin: '0 -16px'
+                    margin: '0 -16px',
+                    boxShadow: '0 -10px 30px rgba(0,0,0,0.5)'
                 }}>
                     <h2 style={{ margin: 0, fontSize: '1.1rem', color: isAllInStock ? 'var(--success)' : 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
                         {isAllInStock ? <CheckCircle size={24} /> : <XCircle size={24} />}
@@ -301,7 +340,14 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, onPlaceOrder, onB
                     justifyContent: 'center',
                     padding: '24px'
                 }}>
-                    <div className="glass-card" style={{ maxWidth: '600px', width: '100%', padding: '32px', position: 'relative' }}>
+                    <div className="glass-card" style={{
+                        maxWidth: '600px',
+                        width: '100%',
+                        padding: '32px',
+                        position: 'relative',
+                        maxHeight: '90vh',
+                        overflowY: 'auto'
+                    }}>
                         <button
                             onClick={() => setShowSizeGuide(false)}
                             style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
