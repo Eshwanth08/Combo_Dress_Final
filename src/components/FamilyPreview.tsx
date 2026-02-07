@@ -188,7 +188,7 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, category = 'ALL',
                 <ArrowLeft size={18} />
                 Back to Gallery
             </button>
-            (
+            
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '32px' }}>
 
                 {/* Visual Section */}
