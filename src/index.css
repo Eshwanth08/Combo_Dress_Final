@@ -70,6 +70,18 @@ body {
   background: var(--bg-secondary);
 }
 
+.btn-reject:hover {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border-color: #fee2e2 !important;
+}
+
+.btn-download:hover {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border-color: #dbeafe !important;
+}
+
 /* Input Base Styles */
 .input {
   width: 100%;

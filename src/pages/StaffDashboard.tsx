@@ -41,7 +41,7 @@ const StaffDashboard: React.FC<StaffDashboardProps> = ({
             return categories.some(cat =>
                 Object.values(design.inventory[cat]).some(stock => {
                     const s = Number(stock);
-                    return s > 0 && s < 2;
+                    return s >= 0 && s <= 5;
                 })
             );
         }
@@ -63,7 +63,7 @@ const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 Object.values(d.inventory[cat]).forEach(stock => {
                     const s = Number(stock);
                     totalStock += s;
-                    if (s > 0 && s < 2) lowStockCount++;
+                    if (s >= 0 && s <= 5) lowStockCount++;
                 });
             });
         });
@@ -76,27 +76,32 @@ const StaffDashboard: React.FC<StaffDashboardProps> = ({
         };
     }, [designs, pendingOrders]);
 
-    const InlineInput = ({ value, onUpdate }: { value: number, onUpdate: (newVal: number) => void }) => (
-        <input
-            type="number"
-            value={value || ''}
-            placeholder="0"
-            onChange={(e) => onUpdate(parseInt(e.target.value) || 0)}
-            onFocus={(e) => e.target.select()}
-            style={{
-                width: '100%',
-                background: 'none',
-                border: 'none',
-                color: value === 0 ? 'var(--text-muted)' : 'var(--text-main)',
-                opacity: value === 0 ? 0.3 : 1,
-                textAlign: 'center',
-                fontSize: '0.9rem',
-                padding: '8px 0',
-                outline: 'none',
-                transition: 'all 0.2s'
-            }}
-        />
-    );
+    const InlineInput = ({ value, onUpdate }: { value: number, onUpdate: (newVal: number) => void }) => {
+        const isLowStock = value >= 0 && value <= 5;
+
+        return (
+            <input
+                type="number"
+                value={value}
+                placeholder="0"
+                onChange={(e) => onUpdate(parseInt(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
+                style={{
+                    width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    color: isLowStock ? 'var(--danger)' : 'var(--text-main)',
+                    fontWeight: isLowStock ? 700 : 400,
+                    opacity: 1,
+                    textAlign: 'center',
+                    fontSize: '0.9rem',
+                    padding: '8px 0',
+                    outline: 'none',
+                    transition: 'all 0.2s'
+                }}
+            />
+        );
+    };
 
     const handleImageExport = async () => {
         setIsExportingImages(true);
@@ -469,32 +474,44 @@ Status: ${order.status.toUpperCase()}
 
                                         <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
                                             <span className="badge badge-info">{order.comboType}</span>
-                                            {Object.entries(order.selectedSizes).map(([member, size]) => (
-                                                <div key={member} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        {member}: <strong>{size}</strong>
-                                                    </span>
-                                                    {order.notes?.[member] && (
-                                                        <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontStyle: 'italic', maxWidth: '150px' }}>
-                                                            "{order.notes[member]}"
+                                            {Object.entries(order.selectedSizes)
+                                                .filter(([_, size]) => size !== 'N/A')
+                                                .map(([member, size]) => (
+                                                    <div key={member} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-main)', background: 'rgba(0,0,0,0.05)', padding: '2px 8px', borderRadius: '4px' }}>
+                                                            {member}: <strong>{size}</strong>
                                                         </span>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                        {order.notes?.[member] && (
+                                                            <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontStyle: 'italic', maxWidth: '150px' }}>
+                                                                "{order.notes[member]}"
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ))}
                                         </div>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: '8px', width: '100%', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                     <button
                                         onClick={() => downloadOrder(order)}
-                                        className="btn btn-ghost" title="Download Order Details"
-                                        style={{ flexGrow: 1, justifyContent: 'center' }}
+                                        className="btn btn-ghost btn-download"
+                                        style={{ flexGrow: 1, justifyContent: 'center', fontSize: '0.85rem' }}
                                     >
-                                        <Download size={18} />
+                                        Download Invoice
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const design = designs.find(d => d.id === order.designId);
+                                            if (design) downloadSingleImage(design.imageUrl, design.name);
+                                        }}
+                                        className="btn btn-ghost btn-download"
+                                        style={{ flexGrow: 1, justifyContent: 'center', fontSize: '0.85rem' }}
+                                    >
+                                        Download Dress Image
                                     </button>
                                     <button
                                         onClick={() => onRejectOrder(order.id)}
-                                        className="btn btn-ghost" style={{ color: 'var(--danger)', gap: '8px', flexGrow: 1, justifyContent: 'center' }}
+                                        className="btn btn-ghost btn-reject" style={{ color: 'var(--danger)', gap: '8px', flexGrow: 1, justifyContent: 'center', fontSize: '0.85rem' }}
                                     >
                                         <XCircle size={18} />
                                         Reject

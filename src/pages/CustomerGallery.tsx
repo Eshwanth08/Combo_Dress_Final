@@ -5,7 +5,7 @@ import { downloadSingleImage } from '../data';
 
 interface CustomerGalleryProps {
     designs: Design[];
-    onSelect: (design: Design) => void;
+    onSelect: (design: Design, category?: string, config?: any) => void;
     selectedDesign: Design | null;
 }
 
@@ -14,11 +14,16 @@ type FilterType = 'ALL' | ComboType | 'boys' | 'girls' | 'unisex';
 const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, selectedDesign }) => {
     const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
     const [showResults, setShowResults] = useState(false);
-    const [filterSizes, setFilterSizes] = useState<Record<string, string>>({
-        'men': 'L',
-        'women': 'M',
-        'boys': '4-5',
-        'girls': '4-5'
+    const [filterSizes, setFilterSizes] = useState<{
+        father: string;
+        mother: string;
+        sons: string[];
+        daughters: string[];
+    }>({
+        father: 'N/A',
+        mother: 'N/A',
+        sons: ['N/A'],
+        daughters: ['N/A']
     });
 
 
@@ -43,6 +48,18 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
         'F-S': ['men', 'boys'],
         'M-D': ['women', 'girls'],
         'F-M': ['men', 'women'],
+        'Custom': [] as string[],
+    };
+
+    const handleReset = () => {
+        setActiveFilter('ALL');
+        setFilterSizes({
+            father: 'N/A',
+            mother: 'N/A',
+            sons: ['N/A'],
+            daughters: ['N/A']
+        });
+        setShowResults(false);
     };
 
     const filteredDesigns = useMemo(() => {
@@ -78,27 +95,55 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
             if (!passesCategory) return false;
 
             // 3. Strict Size Filter
+            // Even in 'ALL' mode, if a user selected a specific size for any member, 
+            // the design MUST satisfy that requirement.
+            const hasSpecificSizeRequirements =
+                filterSizes.father !== 'N/A' ||
+                filterSizes.mother !== 'N/A' ||
+                filterSizes.sons.some(s => s !== 'N/A') ||
+                filterSizes.daughters.some(d => d !== 'N/A');
+
             let membersToCheck: string[] = [];
 
             if (activeFilter === 'ALL') {
-                // Only check sizes for members that exist in this design
-                membersToCheck = ['men', 'women', 'boys', 'girls'].filter(m => {
-                    const inv = design.inventory[m as keyof Design['inventory']];
-                    return Object.values(inv).some(val => val > 0);
-                });
+                if (!hasSpecificSizeRequirements) {
+                    // HIDDEN BY DEFAULT: Don't show any designs if no specific sizes are chosen in 'ALL' mode
+                    return false;
+                }
+
+                // If sizes are selected, check any member that has a selection
+                if (filterSizes.father !== 'N/A') membersToCheck.push('men');
+                if (filterSizes.mother !== 'N/A') membersToCheck.push('women');
+                if (filterSizes.sons.some(s => s !== 'N/A')) membersToCheck.push('boys');
+                if (filterSizes.daughters.some(d => d !== 'N/A')) membersToCheck.push('girls');
             } else {
-                // For specific filters, strict check required members
-                membersToCheck = ['boys', 'girls', 'unisex'].includes(activeFilter)
-                    ? (activeFilter === 'unisex' ? ['boys', 'girls'] : [activeFilter])
-                    : comboMembers[activeFilter as ComboType];
+                // For specific combo/child filters, we require core members
+                if (['boys', 'girls', 'unisex'].includes(activeFilter)) {
+                    membersToCheck = activeFilter === 'unisex' ? ['boys', 'girls'] : [activeFilter];
+                } else {
+                    membersToCheck = comboMembers[activeFilter as ComboType];
+                }
             }
 
-            // If no members have stock (empty design), hide it
-            if (membersToCheck.length === 0) return false;
+            // If we have specific filters but no members identified? 
+            // (Shouldn't happen with above logic, but safety first)
+            if (membersToCheck.length === 0) return true;
 
             return membersToCheck.every(member => {
                 const m = member as keyof Design['inventory'];
-                return (design.inventory[m] as any)[filterSizes[m]] > 0;
+
+                // Get required sizes for this member type from our filter state
+                let requiredSizes: string[] = [];
+                if (m === 'men') requiredSizes = [filterSizes.father];
+                else if (m === 'women') requiredSizes = [filterSizes.mother];
+                else if (m === 'boys') requiredSizes = filterSizes.sons;
+                else if (m === 'girls') requiredSizes = filterSizes.daughters;
+
+                // Check if design has stock for ALL required sizes of this member
+                return requiredSizes.every(size => {
+                    if (size === 'N/A') return true;
+                    return (design.inventory[m] as any)[size] > 0;
+                });
             });
         });
     }, [designs, activeFilter, filterSizes]);
@@ -139,7 +184,7 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                         </label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             <button
-                                onClick={() => setActiveFilter('ALL')}
+                                onClick={handleReset}
                                 className={`btn ${activeFilter === 'ALL' ? 'btn-primary' : 'btn-ghost'}`}
                                 style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.85rem' }}
                             >
@@ -148,7 +193,17 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                             {combos.map((combo) => (
                                 <button
                                     key={combo.id}
-                                    onClick={() => setActiveFilter(combo.id)}
+                                    onClick={() => {
+                                        setActiveFilter(combo.id);
+                                        // Set defaults for newly active members if they are currently N/A
+                                        setFilterSizes(prev => ({
+                                            ...prev,
+                                            father: (combo.id.includes('F') && prev.father === 'N/A') ? 'XL' : prev.father,
+                                            mother: (combo.id.includes('M') && prev.mother === 'N/A') ? 'L' : prev.mother,
+                                            sons: (combo.id.includes('S') && prev.sons.every(s => s === 'N/A')) ? ['4-5'] : prev.sons,
+                                            daughters: (combo.id.includes('D') && prev.daughters.every(d => d === 'N/A')) ? ['4-5'] : prev.daughters,
+                                        }));
+                                    }}
                                     className={`btn ${activeFilter === combo.id ? 'btn-primary' : 'btn-ghost'}`}
                                     style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.85rem' }}
                                 >
@@ -165,14 +220,22 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                             Children
                         </label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                            {childCategories.map((cat) => (
+                            {childCategories.map((child) => (
                                 <button
-                                    key={cat.id}
-                                    onClick={() => setActiveFilter(cat.id)}
-                                    className={`btn ${activeFilter === cat.id ? 'btn-primary' : 'btn-ghost'}`}
+                                    key={child.id}
+                                    onClick={() => {
+                                        setActiveFilter(child.id);
+                                        // Set defaults for newly active members if they are currently N/A
+                                        setFilterSizes(prev => ({
+                                            ...prev,
+                                            sons: (child.id !== 'girls' && prev.sons.every(s => s === 'N/A')) ? ['4-5'] : prev.sons,
+                                            daughters: (child.id !== 'boys' && prev.daughters.every(d => d === 'N/A')) ? ['4-5'] : prev.daughters,
+                                        }));
+                                    }}
+                                    className={`btn ${activeFilter === child.id ? 'btn-primary' : 'btn-ghost'}`}
                                     style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.85rem' }}
                                 >
-                                    {cat.label}
+                                    {child.label}
                                 </button>
                             ))}
                         </div>
@@ -187,34 +250,108 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                         </h4>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px' }}>
-                        {['men', 'women', 'boys', 'girls'].map(member => {
-                            // Only show size picker for members involved in current filter
-                            const isMemberActive = activeFilter === 'ALL' ||
-                                (['boys', 'girls', 'unisex'].includes(activeFilter)
-                                    ? (activeFilter === 'unisex' ? (member === 'boys' || member === 'girls') : member === activeFilter)
-                                    : comboMembers[activeFilter as ComboType].includes(member));
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
+                        {/* Men */}
+                        {(activeFilter === 'ALL' || activeFilter === 'F-S' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') && (
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 600 }}>Father Size</label>
+                                <select
+                                    className="input"
+                                    style={{ padding: '6px', fontSize: '0.9rem', width: '100%' }}
+                                    value={filterSizes.father}
+                                    onChange={(e) => setFilterSizes({ ...filterSizes, father: e.target.value })}
+                                >
+                                    <option value="N/A">None (Optional)</option>
+                                    {adultSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
+                                </select>
+                            </div>
+                        )}
 
-                            if (!isMemberActive) return null;
+                        {/* Women */}
+                        {(activeFilter === 'ALL' || activeFilter === 'M-D' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') && (
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 600 }}>Mother Size</label>
+                                <select
+                                    className="input"
+                                    style={{ padding: '6px', fontSize: '0.9rem', width: '100%' }}
+                                    value={filterSizes.mother}
+                                    onChange={(e) => setFilterSizes({ ...filterSizes, mother: e.target.value })}
+                                >
+                                    <option value="N/A">None (Optional)</option>
+                                    {adultSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
+                                </select>
+                            </div>
+                        )}
 
-                            const sizes = (member === 'men' || member === 'women') ? adultSizes : kidsSizes;
+                        {/* Boys */}
+                        {(activeFilter === 'ALL' || activeFilter === 'boys' || activeFilter === 'unisex' || activeFilter === 'F-S' || activeFilter === 'F-M-S-D') && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Son Sizes</label>
+                                {filterSizes.sons.map((size, idx) => (
+                                    <div key={idx} style={{ display: 'flex', gap: '4px' }}>
+                                        <select
+                                            className="input"
+                                            style={{ padding: '6px', fontSize: '0.9rem', width: '100%' }}
+                                            value={size}
+                                            onChange={(e) => {
+                                                const newSons = [...filterSizes.sons];
+                                                newSons[idx] = e.target.value;
+                                                setFilterSizes({ ...filterSizes, sons: newSons });
+                                            }}
+                                        >
+                                            <option value="N/A">None</option>
+                                            {kidsSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
+                                        </select>
+                                        {filterSizes.sons.length > 1 && (
+                                            <button
+                                                onClick={() => setFilterSizes({ ...filterSizes, sons: filterSizes.sons.filter((_, i) => i !== idx) })}
+                                                style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}
+                                            >✕</button>
+                                        )}
+                                    </div>
+                                ))}
+                                <button
+                                    onClick={() => setFilterSizes({ ...filterSizes, sons: [...filterSizes.sons, 'N/A'] })}
+                                    className="btn btn-ghost"
+                                    style={{ fontSize: '0.75rem', padding: '4px', justifyContent: 'flex-start' }}
+                                >+ Add Son</button>
+                            </div>
+                        )}
 
-                            return (
-                                <div key={member}>
-                                    <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '2px', textTransform: 'capitalize' }}>
-                                        {member} Size
-                                    </label>
-                                    <select
-                                        className="input"
-                                        style={{ padding: '4px 8px', height: 'auto', fontSize: '0.9rem', background: 'var(--bg-main)' }}
-                                        value={filterSizes[member]}
-                                        onChange={(e) => setFilterSizes({ ...filterSizes, [member]: e.target.value })}
-                                    >
-                                        {sizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
-                                    </select>
-                                </div>
-                            );
-                        })}
+                        {/* Girls */}
+                        {(activeFilter === 'ALL' || activeFilter === 'girls' || activeFilter === 'unisex' || activeFilter === 'M-D' || activeFilter === 'F-M-S-D') && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Daughter Sizes</label>
+                                {filterSizes.daughters.map((size, idx) => (
+                                    <div key={idx} style={{ display: 'flex', gap: '4px' }}>
+                                        <select
+                                            className="input"
+                                            style={{ padding: '6px', fontSize: '0.9rem', width: '100%' }}
+                                            value={size}
+                                            onChange={(e) => {
+                                                const newDaughters = [...filterSizes.daughters];
+                                                newDaughters[idx] = e.target.value;
+                                                setFilterSizes({ ...filterSizes, daughters: newDaughters });
+                                            }}
+                                        >
+                                            <option value="N/A">None</option>
+                                            {kidsSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
+                                        </select>
+                                        {filterSizes.daughters.length > 1 && (
+                                            <button
+                                                onClick={() => setFilterSizes({ ...filterSizes, daughters: filterSizes.daughters.filter((_, i) => i !== idx) })}
+                                                style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}
+                                            >✕</button>
+                                        )}
+                                    </div>
+                                ))}
+                                <button
+                                    onClick={() => setFilterSizes({ ...filterSizes, daughters: [...filterSizes.daughters, 'N/A'] })}
+                                    className="btn btn-ghost"
+                                    style={{ fontSize: '0.75rem', padding: '4px', justifyContent: 'flex-start' }}
+                                >+ Add Daughter</button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -223,7 +360,44 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                     className="btn btn-primary"
                     style={{ width: '100%', padding: '12px', borderRadius: '16px', marginTop: '4px', fontSize: '1rem', fontWeight: 600 }}
                 >
-                    Find Matching Outfits ({filteredDesigns.length})
+                    {(() => {
+                        const noFatherSize = filterSizes.father === 'N/A';
+                        const noMotherSize = filterSizes.mother === 'N/A';
+                        const noSonSize = filterSizes.sons.every(s => s === 'N/A');
+                        const noDaughterSize = filterSizes.daughters.every(d => d === 'N/A');
+                        const noSizesSelected = noFatherSize && noMotherSize && noSonSize && noDaughterSize;
+
+                        // 1. Initial/Zero state
+                        if (activeFilter === 'ALL' && noSizesSelected) {
+                            return "Select a Category or Size to Browse";
+                        }
+
+                        // 2. Specific Category Prompts (if no size selected)
+                        if (activeFilter === 'boys' && noSonSize) return "Please Select a Son Size";
+                        if (activeFilter === 'girls' && noDaughterSize) return "Please Select a Daughter Size";
+                        if (activeFilter === 'unisex' && noSonSize && noDaughterSize) return "Please Select a Child Size";
+
+                        // Combinations
+                        if (activeFilter.includes('F') && noFatherSize) return "Please Select Father Size";
+                        if (activeFilter.includes('M') && noMotherSize) return "Please Select Mother Size";
+                        if (activeFilter.includes('S') && noSonSize) return "Please Select Son Size";
+                        if (activeFilter.includes('D') && noDaughterSize) return "Please Select Daughter Size";
+
+                        // 3. Availability Check
+                        if (filteredDesigns.length === 0) {
+                            return "Not Available - No Matching Outfits";
+                        }
+
+                        // 4. Browsing vs Matching
+                        if (noSizesSelected) {
+                            const categoryLabel = childCategories.find(c => c.id === activeFilter)?.label ||
+                                combos.find(c => c.id === activeFilter)?.label ||
+                                'Collection';
+                            return `Browse All ${categoryLabel} (${filteredDesigns.length})`;
+                        }
+
+                        return `Find Matching Outfits (${filteredDesigns.length})`;
+                    })()}
                 </button>
             </div>
 
@@ -290,7 +464,7 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                                     <h2>No matching designs</h2>
                                     <p>Try selecting another category.</p>
                                     <button
-                                        onClick={() => { setActiveFilter('ALL'); }}
+                                        onClick={handleReset}
                                         className="btn btn-ghost"
                                         style={{ marginTop: '16px' }}
                                     >
@@ -314,7 +488,15 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                                                 position: 'relative',
                                                 boxShadow: selectedDesign?.id === design.id ? 'var(--shadow-md)' : 'var(--shadow-sm)'
                                             }}
-                                            onClick={() => onSelect(design)}
+                                            onClick={() => {
+                                                const config = {
+                                                    father: (activeFilter === 'ALL' || activeFilter === 'F-S' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') ? filterSizes.father : 'N/A',
+                                                    mother: (activeFilter === 'ALL' || activeFilter === 'M-D' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') ? filterSizes.mother : 'N/A',
+                                                    sons: (activeFilter === 'ALL' || activeFilter === 'boys' || activeFilter === 'unisex' || activeFilter === 'F-S' || activeFilter === 'F-M-S-D') ? filterSizes.sons : [],
+                                                    daughters: (activeFilter === 'ALL' || activeFilter === 'girls' || activeFilter === 'unisex' || activeFilter === 'M-D' || activeFilter === 'F-M-S-D') ? filterSizes.daughters : []
+                                                };
+                                                onSelect(design, activeFilter, config);
+                                            }}
                                         >
                                             {selectedDesign?.id === design.id && (
                                                 <div style={{
@@ -382,7 +564,16 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                                                         <Download size={18} />
                                                     </button>
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); onSelect(design); }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const config = {
+                                                                father: (activeFilter === 'ALL' || activeFilter === 'F-S' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') ? filterSizes.father : 'N/A',
+                                                                mother: (activeFilter === 'ALL' || activeFilter === 'M-D' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') ? filterSizes.mother : 'N/A',
+                                                                sons: (activeFilter === 'ALL' || activeFilter === 'boys' || activeFilter === 'unisex' || activeFilter === 'F-S' || activeFilter === 'F-M-S-D') ? filterSizes.sons : [],
+                                                                daughters: (activeFilter === 'ALL' || activeFilter === 'girls' || activeFilter === 'unisex' || activeFilter === 'M-D' || activeFilter === 'F-M-S-D') ? filterSizes.daughters : []
+                                                            };
+                                                            onSelect(design, activeFilter, config);
+                                                        }}
                                                         className={`btn ${selectedDesign?.id === design.id ? 'btn-primary' : 'btn-ghost'}`}
                                                         style={{
                                                             padding: '10px 20px',

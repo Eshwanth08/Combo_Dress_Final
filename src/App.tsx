@@ -16,6 +16,8 @@ function App() {
     const [activeTab, setActiveTab] = useState<string>('gallery');
     const [editingDesign, setEditingDesign] = useState<Design | null>(null);
     const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+    const [selectedConfig, setSelectedConfig] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     const location = useLocation();
@@ -296,8 +298,10 @@ function App() {
                                 <CustomerGallery
                                     designs={designs}
                                     selectedDesign={selectedDesign}
-                                    onSelect={(d) => {
+                                    onSelect={(d, category, config) => {
                                         setSelectedDesign(d);
+                                        setSelectedCategory(category || 'ALL');
+                                        setSelectedConfig(config || null);
                                         setActiveTab('preview');
                                     }}
                                 />
@@ -305,6 +309,8 @@ function App() {
                             {activeTab === 'preview' && (
                                 <FamilyPreview
                                     design={selectedDesign}
+                                    category={selectedCategory}
+                                    initialConfig={selectedConfig}
                                     onPlaceOrder={handlePlaceOrder}
                                     onBack={() => setActiveTab('gallery')}
                                 />
