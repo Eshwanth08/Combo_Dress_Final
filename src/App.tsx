@@ -13,7 +13,7 @@ function App() {
     const [designs, setDesigns] = useState<Design[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
 
-    const [activeTab, setActiveTab] = useState<string>('gallery');
+    const [activeTab, setActiveTab] = useState<string>('dashboard');
     const [editingDesign, setEditingDesign] = useState<Design | null>(null);
     const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
     const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -317,7 +317,8 @@ function App() {
                             )}
                         </>
                     } />
-                    <Route path="*" element={<Navigate to="/customerview" replace />} />
+                    <Route path="/" element={<Navigate to="/staffview" replace />} />
+                    <Route path="*" element={<Navigate to="/staffview" replace />} />
                 </Routes>
             </main>
 
