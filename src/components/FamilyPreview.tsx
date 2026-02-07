@@ -188,8 +188,9 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, category = 'ALL',
                 <ArrowLeft size={18} />
                 Back to Gallery
             </button>
+            (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '32px' }}>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '48px' }}>
                 {/* Visual Section */}
                 <div>
                     <div style={{
@@ -279,8 +280,8 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, category = 'ALL',
                                     ))}
                                     <button
                                         onClick={addSon}
-                                        className="btn btn-ghost"
-                                        style={{ alignSelf: 'flex-start', fontSize: '0.8rem', padding: '4px 8px', color: 'var(--primary)' }}
+                                        className="btn-add-member"
+                                        style={{ alignSelf: 'flex-start', marginTop: '4px' }}
                                     >
                                         + Add another Son
                                     </button>
@@ -310,8 +311,8 @@ const FamilyPreview: React.FC<FamilyPreviewProps> = ({ design, category = 'ALL',
                                     ))}
                                     <button
                                         onClick={addDaughter}
-                                        className="btn btn-ghost"
-                                        style={{ alignSelf: 'flex-start', fontSize: '0.8rem', padding: '4px 8px', color: 'var(--primary)' }}
+                                        className="btn-add-member"
+                                        style={{ alignSelf: 'flex-start', marginTop: '4px' }}
                                     >
                                         + Add another Daughter
                                     </button>

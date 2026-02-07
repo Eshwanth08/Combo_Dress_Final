@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { Design, ComboType, AdultSizeStock, KidsSizeStock } from '../types';
-import { Sparkles, ArrowRight, CheckCircle, Filter, Users, Baby, Download, X } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle, Filter, Users, Baby, Download, X, Search } from 'lucide-react';
 import { downloadSingleImage } from '../data';
 
 interface CustomerGalleryProps {
@@ -9,11 +9,23 @@ interface CustomerGalleryProps {
     selectedDesign: Design | null;
 }
 
-type FilterType = 'ALL' | ComboType | 'boys' | 'girls' | 'unisex';
+
 
 const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, selectedDesign }) => {
-    const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
+    const [search, setSearch] = useState('');
+    const [activeFilter, setActiveFilter] = useState<string>('ALL');
     const [showResults, setShowResults] = useState(false);
+
+    // Add effect to handle body scroll
+    React.useEffect(() => {
+        if (showResults) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+        return () => { document.body.style.overflow = 'auto'; };
+    }, [showResults]);
+
     const [filterSizes, setFilterSizes] = useState<{
         father: string;
         mother: string;
@@ -64,6 +76,14 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
 
     const filteredDesigns = useMemo(() => {
         return designs.filter(design => {
+            // Text search
+            const matchesSearch =
+                design.name.toLowerCase().includes(search.toLowerCase()) ||
+                design.color.toLowerCase().includes(search.toLowerCase()) ||
+                design.fabric.toLowerCase().includes(search.toLowerCase());
+
+            if (!matchesSearch) return false;
+
             // 1. Combo / Category Filter
             let passesCategory = true;
             if (activeFilter !== 'ALL') {
@@ -149,11 +169,11 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
     }, [designs, activeFilter, filterSizes]);
 
     return (
-        <div style={{ padding: '0 max(16px, 2vw) 24px max(16px, 2vw)', width: '100%', overflowX: 'hidden' }}>
+        <div style={{ padding: '8px max(12px, 2vw)', width: '100%', overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column' }}>
 
-            <div style={{ textAlign: 'center', marginBottom: '16px', marginTop: '0px' }}>
-                <h1 style={{ fontSize: '2rem', marginBottom: '4px' }}>Our Exclusive Collection</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Find the perfect matching set for your family</p>
+            <div style={{ textAlign: 'center', marginBottom: '8px', marginTop: '0px' }}>
+                <h1 style={{ fontSize: '1.4rem', marginBottom: '0px' }}>Our Exclusive Collection</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>Find the perfect matching set for your family</p>
             </div>
 
             {/* Filter Section */}
@@ -161,32 +181,47 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
             <div
                 style={{
                     maxWidth: '1000px',
-                    margin: '0 auto 0 auto',
+                    margin: '8px auto',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '16px',
-                    background: 'var(--bg-secondary)',
+                    background: 'var(--bg-main)',
                     padding: '24px',
                     borderRadius: '24px',
                     border: '1px solid var(--border-subtle)',
                     width: '100%',
-                    boxShadow: 'var(--shadow-sm)'
+                    boxShadow: '0 4px 20px -5px rgba(0,0,0,0.07)',
+                    flexShrink: 0
                 }}
             >
+                {/* Search Bar inside Card */}
+                <div style={{ position: 'relative', width: '100%' }}>
+                    <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
+                    <input
+                        type="text"
+                        className="input"
+                        placeholder="Search by fabric, color, or design name..."
+                        style={{ paddingLeft: '44px', height: '42px', borderRadius: '10px', background: 'white', border: '1px solid var(--border-subtle)', fontSize: '0.9rem', width: '100%' }}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
 
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                     {/* All / Combos */}
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            <Users size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                            Combinations
-                        </label>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                            <Users size={14} color="var(--primary)" />
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em', height: '14px', lineHeight: '14px' }}>
+                                COMBINATIONS
+                            </label>
+                        </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             <button
                                 onClick={handleReset}
                                 className={`btn ${activeFilter === 'ALL' ? 'btn-primary' : 'btn-ghost'}`}
-                                style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.85rem' }}
+                                style={{ padding: '6px 14px', borderRadius: '40px', fontSize: '0.85rem', flexShrink: 0 }}
                             >
                                 All Designs
                             </button>
@@ -195,7 +230,6 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                                     key={combo.id}
                                     onClick={() => {
                                         setActiveFilter(combo.id);
-                                        // Set defaults for newly active members if they are currently N/A
                                         setFilterSizes(prev => ({
                                             ...prev,
                                             father: (combo.id.includes('F') && prev.father === 'N/A') ? 'XL' : prev.father,
@@ -205,7 +239,7 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                                         }));
                                     }}
                                     className={`btn ${activeFilter === combo.id ? 'btn-primary' : 'btn-ghost'}`}
-                                    style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.85rem' }}
+                                    style={{ padding: '6px 14px', borderRadius: '40px', fontSize: '0.85rem', flexShrink: 0 }}
                                 >
                                     {combo.label}
                                 </button>
@@ -214,18 +248,19 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                     </div>
 
                     {/* Children Categories */}
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            <Baby size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                            Children
-                        </label>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                            <Baby size={14} color="var(--primary)" />
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '0.05em', height: '14px', lineHeight: '14px' }}>
+                                CHILDREN
+                            </label>
+                        </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             {childCategories.map((child) => (
                                 <button
                                     key={child.id}
                                     onClick={() => {
                                         setActiveFilter(child.id);
-                                        // Set defaults for newly active members if they are currently N/A
                                         setFilterSizes(prev => ({
                                             ...prev,
                                             sons: (child.id !== 'girls' && prev.sons.every(s => s === 'N/A')) ? ['4-5'] : prev.sons,
@@ -233,7 +268,7 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                                         }));
                                     }}
                                     className={`btn ${activeFilter === child.id ? 'btn-primary' : 'btn-ghost'}`}
-                                    style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '0.85rem' }}
+                                    style={{ padding: '6px 14px', borderRadius: '40px', fontSize: '0.85rem', flexShrink: 0 }}
                                 >
                                     {child.label}
                                 </button>
@@ -242,123 +277,137 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                     </div>
                 </div>
 
-                <div style={{ padding: '16px', background: 'rgba(79, 70, 229, 0.03)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <h4 style={{ margin: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Filter size={16} color="var(--primary)" />
-                            Filter by Exact Sizes
-                        </h4>
+                <div style={{ padding: '14px 18px', background: '#f8f9ff', borderRadius: '16px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Filter size={15} color="var(--primary)" />
+                        <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, height: '15px', lineHeight: '15px' }}>Filter by Exact Sizes</h4>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
                         {/* Men */}
-                        {(activeFilter === 'ALL' || activeFilter === 'F-S' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') && (
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 600 }}>Father Size</label>
-                                <select
-                                    className="input"
-                                    style={{ padding: '6px', fontSize: '0.9rem', width: '100%' }}
-                                    value={filterSizes.father}
-                                    onChange={(e) => setFilterSizes({ ...filterSizes, father: e.target.value })}
-                                >
-                                    <option value="N/A">None (Optional)</option>
-                                    {adultSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
-                                </select>
-                            </div>
-                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: '66px' }}>
+                            {(activeFilter === 'ALL' || activeFilter === 'F-S' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') ? (
+                                <>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500, height: '14px', lineHeight: '14px' }}>Father Size</label>
+                                    <select
+                                        className="input"
+                                        style={{ padding: '8px 12px', fontSize: '0.9rem', width: '100%', borderRadius: '10px', background: 'white', height: '40px' }}
+                                        value={filterSizes.father}
+                                        onChange={(e) => setFilterSizes({ ...filterSizes, father: e.target.value })}
+                                    >
+                                        <option value="N/A">None (Skip)</option>
+                                        {adultSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
+                                    </select>
+                                </>
+                            ) : <div style={{ height: '60px' }} />}
+                        </div>
 
                         {/* Women */}
-                        {(activeFilter === 'ALL' || activeFilter === 'M-D' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') && (
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 600 }}>Mother Size</label>
-                                <select
-                                    className="input"
-                                    style={{ padding: '6px', fontSize: '0.9rem', width: '100%' }}
-                                    value={filterSizes.mother}
-                                    onChange={(e) => setFilterSizes({ ...filterSizes, mother: e.target.value })}
-                                >
-                                    <option value="N/A">None (Optional)</option>
-                                    {adultSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
-                                </select>
-                            </div>
-                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: '66px' }}>
+                            {(activeFilter === 'ALL' || activeFilter === 'M-D' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') ? (
+                                <>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500, height: '14px', lineHeight: '14px' }}>Mother Size</label>
+                                    <select
+                                        className="input"
+                                        style={{ padding: '8px 12px', fontSize: '0.9rem', width: '100%', borderRadius: '10px', background: 'white', height: '40px' }}
+                                        value={filterSizes.mother}
+                                        onChange={(e) => setFilterSizes({ ...filterSizes, mother: e.target.value })}
+                                    >
+                                        <option value="N/A">None (Optional)</option>
+                                        {adultSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
+                                    </select>
+                                </>
+                            ) : <div style={{ height: '60px' }} />}
+                        </div>
 
                         {/* Boys */}
-                        {(activeFilter === 'ALL' || activeFilter === 'boys' || activeFilter === 'unisex' || activeFilter === 'F-S' || activeFilter === 'F-M-S-D') && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Son Sizes</label>
-                                {filterSizes.sons.map((size, idx) => (
-                                    <div key={idx} style={{ display: 'flex', gap: '4px' }}>
-                                        <select
-                                            className="input"
-                                            style={{ padding: '6px', fontSize: '0.9rem', width: '100%' }}
-                                            value={size}
-                                            onChange={(e) => {
-                                                const newSons = [...filterSizes.sons];
-                                                newSons[idx] = e.target.value;
-                                                setFilterSizes({ ...filterSizes, sons: newSons });
-                                            }}
-                                        >
-                                            <option value="N/A">None</option>
-                                            {kidsSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
-                                        </select>
-                                        {filterSizes.sons.length > 1 && (
-                                            <button
-                                                onClick={() => setFilterSizes({ ...filterSizes, sons: filterSizes.sons.filter((_, i) => i !== idx) })}
-                                                style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}
-                                            >✕</button>
-                                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: '66px' }}>
+                            {(activeFilter === 'ALL' || activeFilter === 'boys' || activeFilter === 'unisex' || activeFilter === 'F-S' || activeFilter === 'F-M-S-D') ? (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '14px' }}>
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>Son Size</label>
+                                        <button
+                                            onClick={() => setFilterSizes({ ...filterSizes, sons: [...filterSizes.sons, 'N/A'] })}
+                                            className="btn-add-member"
+                                            style={{ margin: 0, padding: '0 4px', fontSize: '0.7rem' }}
+                                        >+ Add</button>
                                     </div>
-                                ))}
-                                <button
-                                    onClick={() => setFilterSizes({ ...filterSizes, sons: [...filterSizes.sons, 'N/A'] })}
-                                    className="btn btn-ghost"
-                                    style={{ fontSize: '0.75rem', padding: '4px', justifyContent: 'flex-start' }}
-                                >+ Add Son</button>
-                            </div>
-                        )}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {filterSizes.sons.map((size, idx) => (
+                                            <div key={idx} style={{ display: 'flex', gap: '4px' }}>
+                                                <select
+                                                    className="input"
+                                                    style={{ padding: '8px 12px', fontSize: '0.9rem', width: '100%', borderRadius: '10px', background: 'white', height: '40px' }}
+                                                    value={size}
+                                                    onChange={(e) => {
+                                                        const newSons = [...filterSizes.sons];
+                                                        newSons[idx] = e.target.value;
+                                                        setFilterSizes({ ...filterSizes, sons: newSons });
+                                                    }}
+                                                >
+                                                    <option value="N/A">None</option>
+                                                    {kidsSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
+                                                </select>
+                                                {filterSizes.sons.length > 1 && (
+                                                    <button
+                                                        onClick={() => setFilterSizes({ ...filterSizes, sons: filterSizes.sons.filter((_, i) => i !== idx) })}
+                                                        style={{ color: 'var(--error, red)', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px' }}
+                                                    >✕</button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : <div style={{ height: '60px' }} />}
+                        </div>
 
                         {/* Girls */}
-                        {(activeFilter === 'ALL' || activeFilter === 'girls' || activeFilter === 'unisex' || activeFilter === 'M-D' || activeFilter === 'F-M-S-D') && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Daughter Sizes</label>
-                                {filterSizes.daughters.map((size, idx) => (
-                                    <div key={idx} style={{ display: 'flex', gap: '4px' }}>
-                                        <select
-                                            className="input"
-                                            style={{ padding: '6px', fontSize: '0.9rem', width: '100%' }}
-                                            value={size}
-                                            onChange={(e) => {
-                                                const newDaughters = [...filterSizes.daughters];
-                                                newDaughters[idx] = e.target.value;
-                                                setFilterSizes({ ...filterSizes, daughters: newDaughters });
-                                            }}
-                                        >
-                                            <option value="N/A">None</option>
-                                            {kidsSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
-                                        </select>
-                                        {filterSizes.daughters.length > 1 && (
-                                            <button
-                                                onClick={() => setFilterSizes({ ...filterSizes, daughters: filterSizes.daughters.filter((_, i) => i !== idx) })}
-                                                style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}
-                                            >✕</button>
-                                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: '66px' }}>
+                            {(activeFilter === 'ALL' || activeFilter === 'girls' || activeFilter === 'unisex' || activeFilter === 'M-D' || activeFilter === 'F-M-S-D') ? (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '14px' }}>
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>Daughter Size</label>
+                                        <button
+                                            onClick={() => setFilterSizes({ ...filterSizes, daughters: [...filterSizes.daughters, 'N/A'] })}
+                                            className="btn-add-member"
+                                            style={{ margin: 0, padding: '0 4px', fontSize: '0.7rem' }}
+                                        >+ Add</button>
                                     </div>
-                                ))}
-                                <button
-                                    onClick={() => setFilterSizes({ ...filterSizes, daughters: [...filterSizes.daughters, 'N/A'] })}
-                                    className="btn btn-ghost"
-                                    style={{ fontSize: '0.75rem', padding: '4px', justifyContent: 'flex-start' }}
-                                >+ Add Daughter</button>
-                            </div>
-                        )}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {filterSizes.daughters.map((size, idx) => (
+                                            <div key={idx} style={{ display: 'flex', gap: '4px' }}>
+                                                <select
+                                                    className="input"
+                                                    style={{ padding: '8px 12px', fontSize: '0.9rem', width: '100%', borderRadius: '10px', background: 'white', height: '40px' }}
+                                                    value={size}
+                                                    onChange={(e) => {
+                                                        const newDaughters = [...filterSizes.daughters];
+                                                        newDaughters[idx] = e.target.value;
+                                                        setFilterSizes({ ...filterSizes, daughters: newDaughters });
+                                                    }}
+                                                >
+                                                    <option value="N/A">None</option>
+                                                    {kidsSizes.map(s => <option key={String(s)} value={String(s)}>{String(s)}</option>)}
+                                                </select>
+                                                {filterSizes.daughters.length > 1 && (
+                                                    <button
+                                                        onClick={() => setFilterSizes({ ...filterSizes, daughters: filterSizes.daughters.filter((_, i) => i !== idx) })}
+                                                        style={{ color: 'var(--error, red)', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px' }}
+                                                    >✕</button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : <div style={{ height: '60px' }} />}
+                        </div>
                     </div>
                 </div>
 
                 <button
                     onClick={() => { setShowResults(true); }}
                     className="btn btn-primary"
-                    style={{ width: '100%', padding: '12px', borderRadius: '16px', marginTop: '4px', fontSize: '1rem', fontWeight: 600 }}
+                    style={{ width: '100%', padding: '12px', borderRadius: '10px', marginTop: '4px', fontSize: '1rem', fontWeight: 700 }}
                 >
                     {(() => {
                         const noFatherSize = filterSizes.father === 'N/A';

@@ -12,12 +12,14 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
     const location = useLocation();
     return (
         <nav style={{
-            padding: '16px max(16px, 2vw)',
+            padding: '8px max(16px, 2vw)',
             background: 'var(--bg-main)',
             borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '8px',
             position: 'sticky',
             top: 0,
             zIndex: 1000,
@@ -41,7 +43,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
                 </h1>
             </div>
 
-            <div style={{
+            <div className="nav-center" style={{
                 display: 'flex',
                 gap: '8px',
                 alignItems: 'center',

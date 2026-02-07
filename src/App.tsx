@@ -239,7 +239,7 @@ function App() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)' }}>
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)', overflow: 'hidden' }}>
             <Navigation
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -322,12 +322,12 @@ function App() {
             </main>
 
             <footer style={{
-                padding: '24px',
+                padding: '8px 16px',
                 textAlign: 'center',
                 color: 'var(--text-muted)',
                 borderTop: '1px solid var(--border-subtle)',
                 marginTop: 'auto',
-                fontSize: '0.9rem'
+                fontSize: '0.8rem'
             }}>
                 © 2026 Combodress.com • Developed by <a href="https://sirahdigital.in/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Sirah Digital</a>
             </footer>

@@ -12,6 +12,7 @@
   --glass-border: #e5e7eb;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 body {
@@ -68,6 +69,24 @@ body {
 
 .btn-ghost:hover {
   background: var(--bg-secondary);
+}
+
+.btn-add-member {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-add-member:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-reject:hover {
@@ -145,6 +164,14 @@ body {
 /* Responsive Utilities */
 @media (max-width: 768px) {
   .tablet-up { display: none !important; }
+  .nav-center {
+    position: static !important;
+    transform: none !important;
+    order: 3;
+    width: 100%;
+    margin-top: 12px;
+    justify-content: center;
+  }
 }
 
 @media (min-width: 769px) {
@@ -185,6 +212,19 @@ body {
   .dashboard-grid {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+}
+
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .mobile-stack {
+    flex-direction: column !important;
+    align-items: stretch !important;
   }
 }
 

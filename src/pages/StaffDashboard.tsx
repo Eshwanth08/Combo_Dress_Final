@@ -165,24 +165,32 @@ Status: ${order.status.toUpperCase()}
                 flexWrap: 'wrap',
                 gap: '16px'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', width: '100%' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <button
-                            onClick={onBack}
-                            className="btn btn-ghost" style={{ padding: '8px' }}
-                            title={viewMode === 'orders' ? "Back to Ledger" : "Switch to Customer View"}
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
-                        <h1 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
-                            {viewMode === 'inventory' ? (
-                                <><ArrowLeftRight size={20} color="var(--primary)" /> Ledger</>
-                            ) : (
-                                <><Clock size={20} color="var(--primary)" /> Orders</>
-                            )}
-                        </h1>
+                <div className="mobile-stack" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                                onClick={onBack}
+                                className="btn btn-ghost" style={{ padding: '8px' }}
+                                title={viewMode === 'orders' ? "Back to Ledger" : "Switch to Customer View"}
+                            >
+                                <ArrowLeft size={20} />
+                            </button>
+                            <h1 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                                {viewMode === 'inventory' ? (
+                                    <><ArrowLeftRight size={20} color="var(--primary)" /> Ledger</>
+                                ) : (
+                                    <><Clock size={20} color="var(--primary)" /> Orders</>
+                                )}
+                            </h1>
+                        </div>
+                        <div className="mobile-only" style={{ display: 'flex', gap: '8px' }}>
+                            <button onClick={onAddNew} className="btn btn-primary" style={{ padding: '8px 12px' }}>
+                                <Plus size={18} />
+                                New
+                            </button>
+                        </div>
                     </div>
-                    <div style={{ position: 'relative', width: '100%', maxWidth: '300px', flexGrow: 1 }}>
+                    <div style={{ position: 'relative', width: '100%', maxWidth: '100%', flexGrow: 1 }}>
                         <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
                         <input
                             type="text" className="input" placeholder="Search..."
@@ -192,12 +200,12 @@ Status: ${order.status.toUpperCase()}
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div className="mobile-stack" style={{ display: 'flex', gap: '12px', alignItems: 'center', width: '100%', justifyContent: 'flex-end', marginTop: '12px' }}>
                     {viewMode === 'inventory' && (
-                        <div style={{ display: 'flex', gap: '8px', marginRight: '16px', paddingRight: '16px', borderRight: '1px solid var(--glass-border)' }}>
+                        <div style={{ display: 'flex', gap: '8px', flexGrow: 1 }}>
                             <button
                                 onClick={() => exportToCSV(designs)}
-                                className="btn btn-ghost" style={{ fontSize: '0.8rem', gap: '6px' }} title="Download Inventory Data"
+                                className="btn btn-ghost" style={{ fontSize: '0.8rem', gap: '6px', flexGrow: 1 }} title="Download Inventory Data"
                             >
                                 <FileSpreadsheet size={16} />
                                 CSV
@@ -205,7 +213,7 @@ Status: ${order.status.toUpperCase()}
                             <button
                                 onClick={handleImageExport}
                                 disabled={isExportingImages}
-                                className="btn btn-ghost" style={{ fontSize: '0.8rem', gap: '6px' }} title="Download All Images"
+                                className="btn btn-ghost" style={{ fontSize: '0.8rem', gap: '6px', flexGrow: 1 }} title="Download All Images"
                             >
                                 {isExportingImages ? (
                                     <>
@@ -221,10 +229,9 @@ Status: ${order.status.toUpperCase()}
                             </button>
                         </div>
                     )}
-                    <button onClick={() => navigate('/customerview')} className="btn btn-secondary" style={{ padding: '8px 20px' }}>
+                    <button onClick={() => navigate('/customerview')} className="btn btn-secondary" style={{ padding: '8px 20px', flexGrow: 1 }}>
                         <Eye size={18} />
-                        <span className="tablet-up">Customer View</span>
-                        <span className="mobile-only" style={{ display: 'none' }}>View</span>
+                        <span>View</span>
                     </button>
 
                     <button onClick={onAddNew} className="btn btn-primary tablet-up" style={{ padding: '8px 20px' }}>
