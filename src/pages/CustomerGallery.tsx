@@ -208,7 +208,7 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                 </div>
 
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                <div className="filter-categories-grid">
                     {/* All / Combos */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
@@ -283,7 +283,7 @@ const CustomerGallery: React.FC<CustomerGalleryProps> = ({ designs, onSelect, se
                         <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, height: '15px', lineHeight: '15px' }}>Filter by Exact Sizes</h4>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                    <div className="filter-sizes-grid">
                         {/* Men */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: '66px' }}>
                             {(activeFilter === 'ALL' || activeFilter === 'F-S' || activeFilter === 'F-M' || activeFilter === 'F-M-S-D') ? (

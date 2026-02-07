@@ -247,3 +247,34 @@ body {
 .shake {
   animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
 }
+
+/* Responsive Grid Utilities for Filters */
+.filter-categories-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.filter-sizes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .filter-categories-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .filter-sizes-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-sizes-grid {
+    grid-template-columns: 1fr;
+  }
+}

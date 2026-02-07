@@ -171,7 +171,6 @@ function App() {
 
         if (newOrder) {
             setOrders(prev => [newOrder, ...prev]);
-            alert('Order placed successfully!');
         }
     };
 
