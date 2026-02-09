@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS designs (
     imageUrl TEXT,
     inventory JSONB NOT NULL DEFAULT '{}'::jsonb,
     childType TEXT DEFAULT 'none',
+    label TEXT,
     createdAt BIGINT NOT NULL
 );
 

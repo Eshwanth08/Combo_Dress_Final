@@ -15,15 +15,12 @@ async function checkOrders() {
     if (error) {
         console.error('Error fetching orders:', error)
     } else {
-        console.log(`Found ${data.length} orders:`)
+        if (data.length > 0) {
+            console.log('Available columns in orders table:', Object.keys(data[0]))
+        }
         data.forEach(order => {
             console.log('ORDER START ================================')
-            console.log('ID:', order.id)
-            console.log('Design ID:', order.designid)
-            console.log('Combo Type:', order.combotype)
-            console.log('Status:', order.status)
-            console.log('Selected Sizes:', JSON.stringify(order.selectedsizes, null, 2))
-            console.log('Created At:', new Date(order.createdat).toLocaleString())
+            console.log(JSON.stringify(order, null, 2))
             console.log('ORDER END ==================================')
         })
     }

@@ -19,9 +19,10 @@ async function testUpdate() {
                 men: { M: 5, L: 6, XL: 7 }, // TEST VALUES
                 boys: {}, girls: {}, women: {}
             },
+            label: 'TEST LABEL',
             createdat: Date.now()
         })
-        .select()
+        .select('*')
 
     if (error) {
         console.error('Update Failed:', error)
